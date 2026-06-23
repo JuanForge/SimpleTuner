@@ -1,4 +1,5 @@
-FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04
+FROM docker.io/nvidia/cuda:13.0.3-cudnn-runtime-ubuntu24.04
+#FROM docker.io/nvidia/cuda:13.0.3-cudnn-devel-ubuntu24.04 # cudnn-devel for headers files and build tools
 
 # Hardware Architecture
 ENV TORCH_CUDA_ARCH_LIST=9.0
