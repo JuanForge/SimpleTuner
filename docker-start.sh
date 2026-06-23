@@ -43,4 +43,5 @@ fi
 # Start SimpleTuner Server
 echo "Starting SimpleTuner Server..."
 # We bind to 0.0.0.0 to be accessible outside the container
-simpletuner server --host 0.0.0.0 --port 8001
+source /app/.venv/bin/activate
+/app/.venv/bin/python -m simpletuner server --host 0.0.0.0 --port 8001

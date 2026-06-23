@@ -36,7 +36,11 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && git lfs install
 
+# useless except for debugging : vim, htop
+
 RUN git clone --depth 1 --single-branch --branch $SIMPLETUNER_BRANCH https://github.com/bghira/SimpleTuner.git .
+
+COPY --chmod=755 docker-start.sh /app/start.sh
 
 RUN python${PYTHON_VERSION} -m venv .venv
 
@@ -51,5 +55,5 @@ RUN .venv/bin/python -m pip install --no-cache-dir -e .[jxl]
 
 RUN chmod +x /app/docker-start.sh
 
-ENTRYPOINT [ "/app/docker-start.sh" ]
+ENTRYPOINT [ "/app/start.sh" ]
 # CMD [".venv/bin/simpletuner", "server", "--host", "0.0.0.0", "--port", "8001"] # for bypass the sh file
