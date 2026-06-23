@@ -1,3 +1,5 @@
+# Do not modify this file or change its structure as long as it is maintained by JuanForge, who is responsible for the Dockerfile.
+
 FROM docker.io/nvidia/cuda:13.3.0-cudnn-runtime-ubuntu24.04
 #FROM docker.io/nvidia/cuda:13.3.0-cudnn-devel-ubuntu24.04 # cudnn-devel for headers files and build tools
 
@@ -6,8 +8,8 @@ ARG PYTHON_VERSION=3.12
 ARG SIMPLETUNER_BRANCH=release
 
 
-#ENV CUDA_HOME=/usr/local/cuda
-#ENV LD_LIBRARY_PATH=$CUDA_HOME/lib64:$CUDA_HOME/targets/x86_64-linux/lib/stubs:$LD_LIBRARY_PATH
+#ENV CUDA_HOME=/usr/local/cuda                                                                     - Unnecessary, as it is handled by the libraries.
+#ENV LD_LIBRARY_PATH=$CUDA_HOME/lib64:$CUDA_HOME/targets/x86_64-linux/lib/stubs:$LD_LIBRARY_PATH   - Unnecessary, as it is handled by the libraries.
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -34,19 +36,18 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && git lfs install
 
-RUN git clone https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH .
+RUN git clone --depth 1 --single-branch --branch $SIMPLETUNER_BRANCH https://github.com/bghira/SimpleTuner.git .
 
 RUN python${PYTHON_VERSION} -m venv .venv
 
 RUN .venv/bin/python -m pip install --upgrade pip setuptools wheel
-RUN .venv/bin/python -m pip install --no-cache-dir "huggingface_hub[cli,hf_transfer]" wandb mpi4py ninja  "torchao>=0.17.0,<0.18.0"
+RUN .venv/bin/python -m pip install --no-cache-dir "huggingface_hub[cli,hf_transfer]" wandb mpi4py ninja "torchao>=0.17.0,<0.18.0" psutil sageattention==1.0.6
 
+# -- optional module --
+RUN .venv/bin/python -m pip install --no-cache-dir ramtorch
+# ----
 
 RUN .venv/bin/python -m pip install --no-cache-dir -e .[jxl]
-RUN .venv/bin/python -m pip install --no-build-isolation --no-cache-dir sageattention==1.0.6
-RUN .venv/bin/python -m pip install --no-cache-dir torchao psutil
-
-EXPOSE 22 8001
 
 RUN chmod +x /app/docker-start.sh
 
