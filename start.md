@@ -1,0 +1,2 @@
+cd /home/{username}/Documents/SimpleTuner
+podman run --name simpletuner --device nvidia.com/gpu=0 -p 8001:8001 -e PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:2048 --ipc=host -it -v ./config:/app/config2 -v ./output:/app/output -v ./datasets:/app/datasets -v ./cache/huggingface:/root/.cache/huggingface simpletuner:v{version}

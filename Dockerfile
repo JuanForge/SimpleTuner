@@ -1,21 +1,18 @@
-FROM docker.io/nvidia/cuda:13.0.3-cudnn-runtime-ubuntu24.04
-#FROM docker.io/nvidia/cuda:13.0.3-cudnn-devel-ubuntu24.04 # cudnn-devel for headers files and build tools
+FROM docker.io/nvidia/cuda:13.3.0-cudnn-runtime-ubuntu24.04
+#FROM docker.io/nvidia/cuda:13.3.0-cudnn-devel-ubuntu24.04 # cudnn-devel for headers files and build tools
 
-# Hardware Architecture
-ENV TORCH_CUDA_ARCH_LIST=9.0
-ENV CUDA_HOME=/usr/local/cuda-12.8
-ENV LD_LIBRARY_PATH=$CUDA_HOME/lib64:$CUDA_HOME/targets/x86_64-linux/lib/stubs:$LD_LIBRARY_PATH
-
-# Settings
+# Using 'release' branch for stability. Change to 'main' for latest features.
 ARG PYTHON_VERSION=3.12
+ARG SIMPLETUNER_BRANCH=release
+
+
+#ENV CUDA_HOME=/usr/local/cuda
+#ENV LD_LIBRARY_PATH=$CUDA_HOME/lib64:$CUDA_HOME/targets/x86_64-linux/lib/stubs:$LD_LIBRARY_PATH
+
 ENV DEBIAN_FRONTEND=noninteractive
-ENV HF_HOME=/workspace/huggingface
-ENV SIMPLETUNER_WORKSPACE=/workspace/simpletuner
-ENV PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /app
 
-# 1. System Dependencies
 RUN apt-get update -y && apt-get install -y --no-install-recommends \
     build-essential \
     git \
@@ -37,29 +34,21 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && git lfs install
 
-# 2. Python Environment & Core Deps
-RUN python${PYTHON_VERSION} -m venv /opt/venv \
-    && pip install --upgrade pip setuptools wheel \
-    && pip install --no-cache-dir \
-       "huggingface_hub[cli,hf_transfer]" \
-       wandb \
-       mpi4py \
-       ninja \
-       "torchao>=0.17.0,<0.18.0"
+RUN git clone https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH .
 
-# 3. Install SimpleTuner
-# Use main for current model integrations such as Boogu-Image.
-ARG SIMPLETUNER_BRANCH=main
-RUN git clone https://github.com/bghira/SimpleTuner --branch $SIMPLETUNER_BRANCH \
-    && cd SimpleTuner \
-    && pip install --no-cache-dir -e .[jxl] \
-    && pip install --no-build-isolation --no-cache-dir sageattention==1.0.6
+RUN python${PYTHON_VERSION} -m venv .venv
 
-# 4. Setup Runtime
-COPY --chmod=755 docker-start.sh /start.sh
-VOLUME /workspace
+RUN .venv/bin/python -m pip install --upgrade pip setuptools wheel
+RUN .venv/bin/python -m pip install --no-cache-dir "huggingface_hub[cli,hf_transfer]" wandb mpi4py ninja  "torchao>=0.17.0,<0.18.0"
 
-# SSH & WebUI Ports
+
+RUN .venv/bin/python -m pip install --no-cache-dir -e .[jxl]
+RUN .venv/bin/python -m pip install --no-build-isolation --no-cache-dir sageattention==1.0.6
+RUN .venv/bin/python -m pip install --no-cache-dir torchao psutil
+
 EXPOSE 22 8001
 
-ENTRYPOINT [ "/start.sh" ]
+RUN chmod +x /app/docker-start.sh
+
+ENTRYPOINT [ "/app/docker-start.sh" ]
+# CMD [".venv/bin/simpletuner", "server", "--host", "0.0.0.0", "--port", "8001"] # for bypass the sh file
