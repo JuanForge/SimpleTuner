@@ -6,6 +6,7 @@ FROM docker.io/nvidia/cuda:13.3.0-cudnn-runtime-ubuntu24.04
 # Using 'release' branch for stability. Change to 'main' for latest features.
 ARG PYTHON_VERSION=3.12
 ARG SIMPLETUNER_BRANCH=release
+ARG SIMPLETUNER_WORKSPACE=/app
 
 
 #ENV CUDA_HOME=/usr/local/cuda                                                                     - Unnecessary, as it is handled by the libraries.
